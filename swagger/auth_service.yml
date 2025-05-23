@@ -1,0 +1,202 @@
+openapi: 3.0.3
+info:
+  title: Authentication Service API
+  version: 1.0.0
+  description: API сервиса аутентификации и авторизации пользователей федеральной сети коворкингов
+servers:
+  - url: https://auth.coworking.ru/api/v1
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+          description: Электронная почта пользователя
+        password:
+          type: string
+          format: password
+          example: "P@ssw0rd!"
+          description: Пароль пользователя
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: JWT токен доступа
+        refresh_token:
+          type: string
+          description: Токен обновления для получения нового access_token
+    LogoutRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+          description: Токен обновления, который нужно аннулировать
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+          description: Токен обновления для получения нового access_token
+    RefreshTokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: Новый JWT токен доступа
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - full_name
+      properties:
+        email:
+          type: string
+          format: email
+          example: newuser@example.com
+          description: Электронная почта нового пользователя
+        password:
+          type: string
+          format: password
+          example: "NewUserPass123!"
+          description: Пароль нового пользователя
+        full_name:
+          type: string
+          example: "Иван Иванов"
+          description: Полное имя пользователя
+    RegisterResponse:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          example: 101
+        message:
+          type: string
+          example: "Регистрация прошла успешно"
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Invalid credentials"
+security: []
+paths:
+  /auth/login:
+    post:
+      summary: Вход пользователя/администратора
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Успешный вход, возвращает токены доступа и обновления
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Неверные учетные данные
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      summary: Выход пользователя (аннулирование refresh токена)
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
+      responses:
+        "200":
+          description: Успешный выход
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logout successful"
+        "400":
+          description: Ошибка при выходе (например, неверный токен)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/refresh:
+    post:
+      summary: Обновление access токена по refresh токену
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+      responses:
+        "200":
+          description: Новый access токен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshTokenResponse"
+        "401":
+          description: Неверный или просроченный refresh токен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/register:
+    post:
+      summary: Регистрация нового пользователя
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Пользователь успешно зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+        "400":
+          description: Ошибка в данных регистрации (например, email уже занят)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

@@ -1,0 +1,214 @@
+openapi: 3.0.3
+info:
+  title: Support Service API
+  version: 1.0.0
+  description: API службы поддержки федеральной сети коворкингов
+servers:
+  - url: https://support.coworking.ru/api/v1
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    SupportTicketCreateRequest:
+      type: object
+      required:
+        - subject
+        - description
+      properties:
+        subject:
+          type: string
+          description: Тема обращения
+          example: "Проблема с бронированием"
+        description:
+          type: string
+          description: Подробное описание проблемы
+          example: "Не удаётся забронировать рабочее место на 21 мая"
+        attachments:
+          type: array
+          description: Список URL или идентификаторов вложений
+          items:
+            type: string
+          example: ["file1.png", "log.txt"]
+    SupportTicketResponse:
+      type: object
+      properties:
+        ticket_id:
+          type: integer
+          example: 12345
+        status:
+          type: string
+          example: "open"
+    SupportTicketSummary:
+      type: object
+      properties:
+        ticket_id:
+          type: integer
+          example: 12345
+        subject:
+          type: string
+          example: "Проблема с бронированием"
+        status:
+          type: string
+          example: "open"
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-05-20T10:00:00Z"
+    SupportTicketDetail:
+      allOf:
+        - $ref: "#/components/schemas/SupportTicketSummary"
+        - type: object
+          properties:
+            description:
+              type: string
+              example: "Не удаётся забронировать рабочее место на 21 мая"
+            attachments:
+              type: array
+              items:
+                type: string
+              example: ["file1.png", "log.txt"]
+            messages:
+              type: array
+              items:
+                type: object
+                properties:
+                  sender:
+                    type: string
+                    example: "support_agent"
+                  message:
+                    type: string
+                    example: "Пожалуйста, уточните, какую ошибку вы видите?"
+                  sent_at:
+                    type: string
+                    format: date-time
+                    example: "2025-05-20T11:00:00Z"
+    SupportTicketReplyRequest:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Текст ответа
+          example: "Проблема устранена, попробуйте снова."
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Ticket not found"
+security:
+  - bearerAuth: []
+paths:
+  /support/tickets:
+    post:
+      summary: Создать новое обращение в службу поддержки
+      tags:
+        - Support
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportTicketCreateRequest"
+      responses:
+        "201":
+          description: Обращение успешно создано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicketResponse"
+        "400":
+          description: Ошибка в данных запроса
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      summary: Получить список обращений пользователя или администратора
+      tags:
+        - Support
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Фильтр по статусу обращения (например, open, closed)
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+          description: Фильтр по дате создания обращения
+      responses:
+        "200":
+          description: Список обращений
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SupportTicketSummary"
+  /support/tickets/{ticket_id}:
+    get:
+      summary: Получить детали конкретного обращения
+      tags:
+        - Support
+      parameters:
+        - in: path
+          name: ticket_id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор обращения
+      responses:
+        "200":
+          description: Детали обращения
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicketDetail"
+        "404":
+          description: Обращение не найдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /support/tickets/{ticket_id}/reply:
+    post:
+      summary: Ответить на обращение в службу поддержки
+      tags:
+        - Support
+      parameters:
+        - in: path
+          name: ticket_id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор обращения
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportTicketReplyRequest"
+      responses:
+        "200":
+          description: Ответ успешно добавлен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+        "404":
+          description: Обращение не найдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

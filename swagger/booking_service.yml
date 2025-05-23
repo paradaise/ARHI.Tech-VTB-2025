@@ -1,0 +1,174 @@
+openapi: 3.0.3
+info:
+  title: Booking Service API
+  version: 1.0.0
+  description: API сервиса бронирования помещений и рабочих мест федеральной сети коворкингов
+servers:
+  - url: https://booking.coworking.ru/api/v1
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    BookingRequest:
+      type: object
+      required:
+        - start_date
+        - end_date
+      properties:
+        start_date:
+          type: string
+          format: date-time
+          example: "2025-05-21T09:00:00+03:00"
+          description: Дата и время начала бронирования
+        end_date:
+          type: string
+          format: date-time
+          example: "2025-05-21T18:00:00+03:00"
+          description: Дата и время окончания бронирования
+    BookingResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        booking_id:
+          type: integer
+          example: 789
+        resource_id:
+          type: integer
+          example: 456
+        resource_type:
+          type: string
+          example: "room"
+        start_date:
+          type: string
+          format: date-time
+          example: "2025-05-21T09:00:00+03:00"
+        end_date:
+          type: string
+          format: date-time
+          example: "2025-05-21T18:00:00+03:00"
+    Resource:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 456
+        name:
+          type: string
+          example: "Переговорная №1"
+        location:
+          type: string
+          example: "Москва, ул. Тверская, 10"
+        type:
+          type: string
+          example: "room"
+        status:
+          type: string
+          example: "available"
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Resource not found"
+security:
+  - bearerAuth: []
+paths:
+  /rooms:
+    get:
+      summary: Получить список помещений для бронирования
+      description: Получение списка внутренних помещений коворкинга с возможностью фильтрации
+      tags:
+        - Rooms
+      parameters:
+        - in: query
+          name: location
+          schema:
+            type: string
+          description: Фильтр по локации
+        - in: query
+          name: type
+          schema:
+            type: string
+          description: Фильтр по типу помещения
+      responses:
+        "200":
+          description: Список помещений
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Resource"
+
+  /rooms/{id}/book:
+    post:
+      summary: Забронировать помещение
+      description: Создание бронирования на помещение по ID
+      tags:
+        - Rooms
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор помещения
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingRequest"
+      responses:
+        "200":
+          description: Успешное бронирование помещения
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingResponse"
+        "400":
+          description: Ошибка в данных бронирования
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Помещение не найдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{id}/rooms:
+    get:
+      summary: Получить список бронирований помещений пользователя
+      description: Получение всех бронирований помещений, сделанных пользователем
+      tags:
+        - Rooms
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор пользователя
+      responses:
+        "200":
+          description: Список бронирований помещений пользователя
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BookingResponse"
+        "404":
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

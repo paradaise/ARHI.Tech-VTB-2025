@@ -1,0 +1,235 @@
+openapi: 3.0.3
+info:
+  title: Coworking Management API
+  version: 1.0.0
+  description: API для управления коворкингами федеральной сети с JWT аутентификацией для защищённых операций
+servers:
+  - url: https://api.coworking.ru/v1
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Coworking:
+      type: object
+      required:
+        - name
+        - location
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: Уникальный идентификатор коворкинга
+        name:
+          type: string
+          example: "Coworking Moscow Central"
+          description: Название коворкинга
+        location:
+          type: string
+          example: "Москва, ул. Тверская, 10"
+          description: Адрес коворкинга
+        timezone:
+          type: string
+          example: "Europe/Moscow"
+          description: Часовой пояс коворкинга
+        capacity:
+          type: integer
+          example: 2000
+          description: Количество рабочих мест
+        description:
+          type: string
+          example: "Современный коворкинг в центре Москвы"
+          description: Описание коворкинга
+    CoworkingCreateRequest:
+      type: object
+      required:
+        - name
+        - location
+        - timezone
+        - capacity
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        timezone:
+          type: string
+        capacity:
+          type: integer
+        description:
+          type: string
+    CoworkingUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        timezone:
+          type: string
+        capacity:
+          type: integer
+        description:
+          type: string
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "message"
+security: []
+paths:
+  /coworkings:
+    post:
+      summary: Создать новый коворкинг
+      tags:
+        - Coworkings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CoworkingCreateRequest"
+      responses:
+        "201":
+          description: Коворкинг успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coworking"
+        "400":
+          description: Ошибка в данных запроса
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      summary: Получить список всех коворкингов
+      tags:
+        - Coworkings
+      responses:
+        "200":
+          description: Список коворкингов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Coworking"
+
+  /coworkings/{id}:
+    get:
+      summary: Получить коворкинг по ID
+      tags:
+        - Coworkings
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор коворкинга
+      responses:
+        "200":
+          description: Данные коворкинга
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coworking"
+        "404":
+          description: Коворкинг не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      summary: Частично обновить коворкинг
+      tags:
+        - Coworkings
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CoworkingUpdateRequest"
+      responses:
+        "200":
+          description: Коворкинг обновлен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coworking"
+        "404":
+          description: Коворкинг не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      summary: Полностью обновить коворкинг
+      tags:
+        - Coworkings
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CoworkingCreateRequest"
+      responses:
+        "200":
+          description: Коворкинг полностью обновлен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coworking"
+        "404":
+          description: Коворкинг не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      summary: Удалить коворкинг по ID
+      tags:
+        - Coworkings
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Коворкинг успешно удален
+        "404":
+          description: Коворкинг не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

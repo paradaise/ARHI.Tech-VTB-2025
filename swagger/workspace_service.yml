@@ -1,0 +1,222 @@
+openapi: 3.0.3
+info:
+  title: Workspace Service API
+  version: 1.0.0
+  description: API сервиса управления рабочими местами федеральной сети коворкингов
+servers:
+  - url: https://workspace.coworking.ru/api/v1
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Workspace:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 123
+        location:
+          type: string
+          example: "Москва, ул. Тверская, 10"
+        status:
+          type: string
+          description: Статус рабочего места (доступно, занято, забронировано)
+          example: "available"
+        type:
+          type: string
+          description: Тип рабочего места (открытое, кабинет, переговорная)
+          example: "open_space"
+    BookingRequest:
+      type: object
+      required:
+        - start_date
+        - end_date
+      properties:
+        start_date:
+          type: string
+          format: date-time
+          example: "2025-05-21T09:00:00+03:00"
+        end_date:
+          type: string
+          format: date-time
+          example: "2025-05-21T18:00:00+03:00"
+    BookingResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        booking_id:
+          type: integer
+          example: 456
+        workspace_id:
+          type: integer
+          example: 123
+        start_date:
+          type: string
+          format: date-time
+          example: "2025-05-21T09:00:00+03:00"
+        end_date:
+          type: string
+          format: date-time
+          example: "2025-05-21T18:00:00+03:00"
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Workspace not found"
+security:
+  - bearerAuth: []
+paths:
+  /workspaces:
+    get:
+      summary: Получить список рабочих мест
+      description: Получение списка рабочих мест с возможностью фильтрации по локации и статусу
+      tags:
+        - Workspaces
+      parameters:
+        - in: query
+          name: location
+          schema:
+            type: string
+          description: Фильтр по локации
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Фильтр по статусу рабочего места
+      responses:
+        "200":
+          description: Список рабочих мест
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workspace"
+  /workspaces/{id}:
+    get:
+      summary: Получить детали рабочего места
+      description: Получение полной информации о рабочем месте по ID
+      tags:
+        - Workspaces
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор рабочего места
+      responses:
+        "200":
+          description: Детали рабочего места
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workspace"
+        "404":
+          description: Рабочее место не найдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /workspaces/{id}/book:
+    post:
+      summary: Забронировать рабочее место
+      description: Создание бронирования рабочего места на указанный период
+      tags:
+        - Workspaces
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор рабочего места для бронирования
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingRequest"
+      responses:
+        "200":
+          description: Успешное бронирование рабочего места
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingResponse"
+        "400":
+          description: Ошибка в данных бронирования
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Рабочее место не найдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /workspaces/{id}/release:
+    post:
+      summary: Освободить рабочее место
+      description: Освобождение ранее забронированного рабочего места
+      tags:
+        - Workspaces
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор рабочего места для освобождения
+      responses:
+        "200":
+          description: Успешное освобождение рабочего места
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+        "404":
+          description: Рабочее место не найдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users/{id}/workspaces:
+    get:
+      summary: Получить список бронирований пользователя
+      description: Получение всех бронирований рабочих мест, сделанных пользователем
+      tags:
+        - Workspaces
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор пользователя
+      responses:
+        "200":
+          description: Список бронирований пользователя
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BookingResponse"
+        "404":
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

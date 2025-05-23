@@ -1,0 +1,682 @@
+openapi: 3.0.3
+info:
+  title: Federal Coworking Management API - Admin Services
+  version: 1.0.0
+  description: API для администрирования и управления рабочими местами, парковкой, технической поддержкой, СКУД, персоналом, бухгалтерией, аналитикой и платёжной системой федеральной сети коворкингов.
+servers:
+  - url: https://admin.coworking.ru/api/v1
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Workspace:
+      type: object
+      properties:
+        id:
+          type: integer
+        location:
+          type: string
+        status:
+          type: string
+        type:
+          type: string
+    ParkingSpot:
+      type: object
+      properties:
+        id:
+          type: integer
+        location:
+          type: string
+        status:
+          type: string
+    ParkingRate:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        price_per_hour:
+          type: number
+          format: float
+    SupportTicket:
+      type: object
+      properties:
+        id:
+          type: integer
+        subject:
+          type: string
+        status:
+          type: string
+    AccessEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        event_type:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    Employee:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        role:
+          type: string
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: integer
+        amount:
+          type: number
+          format: float
+        status:
+          type: string
+    AnalyticsReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        data:
+          type: object
+    Payment:
+      type: object
+      properties:
+        id:
+          type: integer
+        amount:
+          type: number
+          format: float
+        status:
+          type: string
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+security:
+  - bearerAuth: []
+paths:
+  # Администрирование и управление рабочими местами
+  /admin/workspaces:
+    get:
+      summary: Получить список рабочих мест
+      tags: [Workspaces]
+      responses:
+        "200":
+          description: Список рабочих мест
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workspace"
+    post:
+      summary: Создать рабочее место
+      tags: [Workspaces]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Workspace"
+      responses:
+        "201":
+          description: Рабочее место создано
+  /admin/workspaces/{id}:
+    get:
+      summary: Получить детали рабочего места
+      tags: [Workspaces]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Детали рабочего места
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workspace"
+    put:
+      summary: Обновить рабочее место
+      tags: [Workspaces]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Workspace"
+      responses:
+        "200":
+          description: Рабочее место обновлено
+    delete:
+      summary: Удалить рабочее место
+      tags: [Workspaces]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Рабочее место удалено
+
+  # Система управления парковкой
+  /admin/parking-spots:
+    get:
+      summary: Получить список парковочных мест
+      tags: [Parking]
+      responses:
+        "200":
+          description: Список парковочных мест
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ParkingSpot"
+    post:
+      summary: Добавить парковочное место
+      tags: [Parking]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParkingSpot"
+      responses:
+        "201":
+          description: Парковочное место добавлено
+  /admin/parking-spots/{id}:
+    put:
+      summary: Обновить парковочное место
+      tags: [Parking]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParkingSpot"
+      responses:
+        "200":
+          description: Парковочное место обновлено
+    delete:
+      summary: Удалить парковочное место
+      tags: [Parking]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Парковочное место удалено
+  /admin/parking-rates:
+    get:
+      summary: Получить тарифы на парковку
+      tags: [Parking]
+      responses:
+        "200":
+          description: Список тарифов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ParkingRate"
+    post:
+      summary: Создать тариф на парковку
+      tags: [Parking]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParkingRate"
+      responses:
+        "201":
+          description: Тариф создан
+  /admin/parking-rates/{id}:
+    put:
+      summary: Обновить тариф на парковку
+      tags: [Parking]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParkingRate"
+      responses:
+        "200":
+          description: Тариф обновлен
+    delete:
+      summary: Удалить тариф на парковку
+      tags: [Parking]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Тариф удален
+
+  # Служба технической поддержки
+  /support/tickets:
+    get:
+      summary: Получить список тикетов
+      tags: [Support]
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Фильтр по статусу
+      responses:
+        "200":
+          description: Список тикетов
+    post:
+      summary: Создать тикет
+      tags: [Support]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subject:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "201":
+          description: Тикет создан
+  /support/tickets/{id}:
+    get:
+      summary: Получить детали тикета
+      tags: [Support]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Детали тикета
+    patch:
+      summary: Обновить тикет
+      tags: [Support]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                comment:
+                  type: string
+      responses:
+        "200":
+          description: Тикет обновлен
+
+  # СКУД (контроль доступа и безопасность)
+  /access/events:
+    get:
+      summary: Получить события контроля доступа
+      tags: [Access Control]
+      parameters:
+        - in: query
+          name: user_id
+          schema:
+            type: integer
+        - in: query
+          name: event_type
+          schema:
+            type: string
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Список событий
+  /access/users/{id}/permissions:
+    get:
+      summary: Получить права доступа пользователя
+      tags: [Access Control]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Права доступа пользователя
+    post:
+      summary: Назначить права доступа пользователю
+      tags: [Access Control]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                permissions:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Права доступа обновлены
+
+  # Система управления персоналом
+  /hr/employees:
+    get:
+      summary: Получить список сотрудников
+      tags: [HR]
+      responses:
+        "200":
+          description: Список сотрудников
+    post:
+      summary: Добавить сотрудника
+      tags: [HR]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Employee"
+      responses:
+        "201":
+          description: Сотрудник добавлен
+  /hr/employees/{id}:
+    get:
+      summary: Получить данные сотрудника
+      tags: [HR]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Данные сотрудника
+    put:
+      summary: Обновить данные сотрудника
+      tags: [HR]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Employee"
+      responses:
+        "200":
+          description: Данные сотрудника обновлены
+    delete:
+      summary: Удалить сотрудника
+      tags: [HR]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Сотрудник удалён
+
+  # Бухгалтерия
+  /accounting/invoices:
+    get:
+      summary: Получить список счетов
+      tags: [Accounting]
+      responses:
+        "200":
+          description: Список счетов
+    post:
+      summary: Создать счет
+      tags: [Accounting]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Invoice"
+      responses:
+        "201":
+          description: Счет создан
+  /accounting/invoices/{id}:
+    get:
+      summary: Получить детали счета
+      tags: [Accounting]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Детали счета
+    put:
+      summary: Обновить счет
+      tags: [Accounting]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Invoice"
+      responses:
+        "200":
+          description: Счет обновлен
+    delete:
+      summary: Удалить счет
+      tags: [Accounting]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Счет удалён
+
+  # Система аналитики и мониторинга
+  /analytics/usage:
+    get:
+      summary: Получить статистику использования рабочих мест, помещений и парковки
+      tags: [Analytics]
+      responses:
+        "200":
+          description: Статистика использования
+  /analytics/occupancy:
+    get:
+      summary: Получить загрузку помещений и рабочих мест по времени
+      tags: [Analytics]
+      responses:
+        "200":
+          description: Данные по загрузке
+  /analytics/financials:
+    get:
+      summary: Получить финансовые отчеты
+      tags: [Analytics]
+      responses:
+        "200":
+          description: Финансовые отчеты
+  /analytics/inventory:
+    get:
+      summary: Мониторинг остатков канцелярии и оргтехники
+      tags: [Analytics]
+      responses:
+        "200":
+          description: Данные по остаткам
+  /monitoring/system-status:
+    get:
+      summary: Получить статус всех сервисов и оборудования
+      tags: [Monitoring]
+      responses:
+        "200":
+          description: Статус системы
+  /monitoring/alerts:
+    get:
+      summary: Получить текущие предупреждения и инциденты
+      tags: [Monitoring]
+      responses:
+        "200":
+          description: Список предупреждений
+
+  # Платёжная система (включая инкассацию)
+  /payments/initiate:
+    post:
+      summary: Инициация платежа
+      tags: [Payments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  format: float
+                service:
+                  type: string
+                method:
+                  type: string
+      responses:
+        "200":
+          description: Информация о платеже
+  /payments/status/{payment_id}:
+    get:
+      summary: Проверить статус платежа
+      tags: [Payments]
+      parameters:
+        - in: path
+          name: payment_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Статус платежа
+  /payments/collection:
+    post:
+      summary: Инициация инкассации (сбора средств)
+      tags: [Payments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  format: float
+                description:
+                  type: string
+      responses:
+        "200":
+          description: Инкассация инициирована
+  /payments/reports:
+    get:
+      summary: Получить отчёты по платежам и инкассации
+      tags: [Payments]
+      responses:
+        "200":
+          description: Отчёты по платежам
+  /payments/refund:
+    post:
+      summary: Оформить возврат платежа
+      tags: [Payments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payment_id:
+                  type: integer
+                amount:
+                  type: number
+                  format: float
+      responses:
+        "200":
+          description: Возврат оформлен
